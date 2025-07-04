@@ -90,14 +90,25 @@ resource "aws_security_group" "web_sg" {
 }
 
 resource "aws_instance" "web" {
-  ami           = "ami-00f7e79ebcafba5e4" # Ubuntu 20.04 (London)
+  ami           = "ami-00f7e79ebcafba5e4" # (Replace with your Amazon Linux 2 AMI if needed)
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name      = "devops-key"
 
+  user_data = <<-EOF
+    #!/bin/bash
+    yum update -y
+    amazon-linux-extras install docker -y
+    service docker start
+    usermod -aG docker ec2-user
+    # Install Docker Compose v2
+    curl -L "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+    systemctl enable docker
+  EOF
+
   tags = {
     Name = "devops-instance"
   }
 }
-
